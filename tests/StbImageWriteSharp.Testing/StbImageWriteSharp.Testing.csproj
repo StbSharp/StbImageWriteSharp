@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{4295DB99-F5C5-4D33-84DA-02AA2CA141B6}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>StbImageSharp.Testing</RootNamespace>
-    <AssemblyName>StbImageSharp.Testing</AssemblyName>
+    <RootNamespace>StbImageWriteSharp.Testing</RootNamespace>
+    <AssemblyName>StbImageWriteSharp.Testing</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="StbImageSharp, Version=2.22.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\build\packages\StbImageSharp.2.22.2\lib\net45\StbImageSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -46,14 +49,17 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\StbImageSharp\StbImageSharp.csproj">
-      <Project>{a0123fc9-6fb4-448d-94d1-84433b317fab}</Project>
-      <Name>StbImageSharp</Name>
+    <ProjectReference Include="..\..\src\StbImageWriteSharp\StbImageWriteSharp.csproj">
+      <Project>{e674856c-c482-4a80-ad30-37c58ea38967}</Project>
+      <Name>StbImageWriteSharp</Name>
     </ProjectReference>
     <ProjectReference Include="..\Stb.Native\Stb.Native.vcxproj">
       <Project>{ea7b8121-942a-437d-85d5-e4d55b94e88a}</Project>
       <Name>Stb.Native</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -4,20 +4,20 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using StbImageSharp;
+using StbImageWriteSharp;
 using StbNative;
 
-namespace StbImageSharp.Testing
+namespace StbSharp.Tests
 {
 	internal static class Program
 	{
 		private static int tasksStarted;
 		private static int filesProcessed;
-		private static int stbSharpLoadingFromStream;
-		private static int stbNativeLoadingFromStream;
-		private static int stbSharpLoadingFromMemory;
-		private static int stbNativeLoadingFromMemory;
+		private static int stbSharpWrite;
+		private static int stbNativeWrite;
 
-		private delegate void WriteDelegate(ImageResult image, Stream stream);
+		private delegate void WriteDelegate(byte[] data, int width, int height, StbImageWriteSharp.ColorComponents components, Stream stream);
 
 		private const int LoadTries = 10;
 
@@ -43,75 +43,6 @@ namespace StbImageSharp.Testing
 		{
 			sw.Stop();
 			return (int) sw.ElapsedMilliseconds;
-		}
-
-		private delegate byte[] LoadDelegate(out int x, out int y, out ColorComponents comp);
-
-		private static void ParseTest(Stopwatch sw, LoadDelegate load1, LoadDelegate load2,
-			out int load1Passed, out int load2Passed)
-		{
-			Log("With StbSharp");
-			int x = 0, y = 0;
-			var comp = ColorComponents.Default;
-			byte[] parsed = new byte[0];
-			BeginWatch(sw);
-
-			for (var i = 0; i < LoadTries; ++i)
-			{
-				parsed = load1(out x, out y, out comp);
-			}
-
-			Log("x: {0}, y: {1}, comp: {2}, size: {3}", x, y, comp, parsed.Length);
-			var passed = EndWatch(sw)/LoadTries;
-			Log("Span: {0} ms", passed);
-			load1Passed = passed;
-
-			Log("With Stb.Native");
-			int x2 = 0, y2 = 0;
-			var comp2 = ColorComponents.Default;
-			byte[] parsed2 = new byte[0];
-
-			BeginWatch(sw);
-			for (var i = 0; i < LoadTries; ++i)
-			{
-				parsed2 = load2(out x2, out y2, out comp2);
-			}
-			Log("x: {0}, y: {1}, comp: {2}, size: {3}", x2, y2, comp2, parsed2.Length);
-			passed = EndWatch(sw)/LoadTries;
-			Log("Span: {0} ms", passed);
-			load2Passed = passed;
-
-			if (x != x2)
-			{
-				throw new Exception(string.Format("Inconsistent x: StbSharp={0}, Stb.Native={1}", x, x2));
-			}
-
-			if (y != y2)
-			{
-				throw new Exception(string.Format("Inconsistent y: StbSharp={0}, Stb.Native={1}", y, y2));
-			}
-
-			if (comp != comp2)
-			{
-				throw new Exception(string.Format("Inconsistent comp: StbSharp={0}, Stb.Native={1}", comp, comp2));
-			}
-
-			if (parsed.Length != parsed2.Length)
-			{
-				throw new Exception(string.Format("Inconsistent parsed length: StbSharp={0}, Stb.Native={1}", parsed.Length,
-					parsed2.Length));
-			}
-
-			for (var i = 0; i < parsed.Length; ++i)
-			{
-				if (parsed[i] != parsed2[i])
-				{
-					throw new Exception(string.Format("Inconsistent data: index={0}, StbSharp={1}, Stb.Native={2}",
-						i,
-						(int) parsed[i],
-						(int) parsed2[i]));
-				}
-			}
 		}
 
 		public static bool RunTests()
@@ -157,81 +88,137 @@ namespace StbImageSharp.Testing
 				Log("{0} -- #{1}: Loading {2} into memory", DateTime.Now.ToLongTimeString(), filesProcessed, f);
 				var data = File.ReadAllBytes(f);
 				Log("----------------------------");
+				var image = ImageResult.FromMemory(data);
 
-				Log("Loading From Stream");
-				int x = 0, y = 0;
-				var comp = ColorComponents.Default;
-				int stbSharpPassed, stbNativePassed;
-				byte[] parsed = new byte[0];
-				ParseTest(
-					sw,
-					(out int xx, out int yy, out ColorComponents ccomp) =>
+				for (var k = 0; k <= 4; ++k)
+				{
+					Log("Saving as {0} with StbSharp", FormatNames[k]);
+
+					if (k < 4)
 					{
-						using (var ms = new MemoryStream(data))
+						var writer = new ImageWriter();
+						WriteDelegate wd = null;
+						switch (k)
 						{
-							var loader = new ImageStreamLoader();
-							var img = loader.Load(ms, ColorComponents.RedGreenBlueAlpha);
-
-							parsed = img.Data;
-							xx = img.Width;
-							yy = img.Height;
-							ccomp = img.SourceComp;
-
-							x = xx;
-							y = yy;
-							comp = ccomp;
-							return parsed;
+							case 0:
+								wd = writer.WriteBmp;
+								break;
+							case 1:
+								wd = writer.WriteTga;
+								break;
+							case 2:
+								wd = writer.WriteHdr;
+								break;
+							case 3:
+								wd = writer.WritePng;
+								break;
 						}
-					},
-					(out int xx, out int yy, out ColorComponents ccomp) =>
-					{
-						using (var ms = new MemoryStream(data))
+
+						byte[] save;
+						BeginWatch(sw);
+						using (var stream = new MemoryStream())
 						{
-							var result = Native.load_from_stream(ms, out xx, out yy, out int icomp, StbImage.STBI_rgb_alpha);
-							ccomp = (ColorComponents)icomp;
-							return result;
+							wd(image.Data, image.Width, image.Height, (StbImageWriteSharp.ColorComponents)image.Comp, stream);
+							save = stream.ToArray();
 						}
-					},
-					out stbSharpPassed, out stbNativePassed
-				);
-				stbSharpLoadingFromStream += stbSharpPassed;
-				stbNativeLoadingFromStream += stbNativePassed;
 
-				Log("Loading from memory");
-				ParseTest(
-					sw,
-					(out int xx, out int yy, out ColorComponents ccomp) =>
+						var passed = EndWatch(sw);
+						stbSharpWrite += passed;
+						Log("Span: {0} ms", passed);
+						Log("StbSharp Size: {0}", save.Length);
+
+						Log("Saving as {0} with Stb.Native", FormatNames[k]);
+						BeginWatch(sw);
+						byte[] save2;
+						using (var stream = new MemoryStream())
+						{
+							Native.save_to_stream(image.Data, image.Width, image.Height, (int)image.Comp, k, stream);
+							save2 = stream.ToArray();
+						}
+
+						passed = EndWatch(sw);
+						stbNativeWrite += passed;
+
+						Log("Span: {0} ms", passed);
+						Log("Stb.Native Size: {0}", save2.Length);
+
+						if (save.Length != save2.Length)
+						{
+							throw new Exception(string.Format("Inconsistent output size: StbSharp={0}, Stb.Native={1}",
+								save.Length, save2.Length));
+						}
+
+						for (var i = 0; i < save.Length; ++i)
+						{
+							if (save[i] != save2[i])
+							{
+								throw new Exception(string.Format("Inconsistent data: index={0}, StbSharp={1}, Stb.Native={2}",
+									i,
+									(int) save[i],
+									(int) save2[i]));
+							}
+						}
+					}
+					else
 					{
-						var img = ImageResult.FromMemory(data, ColorComponents.RedGreenBlueAlpha);
+						for (var qi = 0; qi < JpgQualities.Length; ++qi)
+						{
+							var quality = JpgQualities[qi];
+							Log("Saving as JPG with StbSharp with quality={0}", quality);
+							byte[] save;
+							BeginWatch(sw);
+							using (var stream = new MemoryStream())
+							{
+								var writer = new ImageWriter();
+								writer.WriteJpg(image.Data, image.Width, image.Height, (StbImageWriteSharp.ColorComponents)image.Comp, stream, quality);
+								save = stream.ToArray();
+							}
 
-						var res = img.Data;
-						xx = img.Width;
-						yy = img.Height;
-						ccomp = img.SourceComp;
+							var passed = EndWatch(sw);
+							stbSharpWrite += passed;
 
-						x = xx;
-						y = yy;
-						comp = ccomp;
-						return res;
-					},
-					(out int xx, out int yy, out ColorComponents ccomp) =>
-					{
-						var result = Native.load_from_memory(data, out xx, out yy, out int icomp, StbImage.STBI_rgb_alpha);
-						ccomp = (ColorComponents)icomp;
-						return result;
-					},
-					out stbSharpPassed, out stbNativePassed
-				);
-				stbSharpLoadingFromMemory += stbSharpPassed;
-				stbNativeLoadingFromMemory += stbNativePassed;
+							Log("Span: {0} ms", passed);
+							Log("StbSharp Size: {0}", save.Length);
 
-				Log("Total StbSharp Loading From Stream Time: {0} ms", stbSharpLoadingFromStream);
-				Log("Total Stb.Native Loading From Stream Time: {0} ms", stbNativeLoadingFromStream);
-				Log("Total StbSharp Loading From memory Time: {0} ms", stbSharpLoadingFromMemory);
-				Log("Total Stb.Native Loading From memory Time: {0} ms", stbNativeLoadingFromMemory);
+							Log("Saving as JPG with Stb.Native with quality={0}", quality);
+							BeginWatch(sw);
+							byte[] save2;
+							using (var stream = new MemoryStream())
+							{
+								Native.save_to_jpg(image.Data, image.Width, image.Height, (int)image.Comp, stream, quality);
+								save2 = stream.ToArray();
+							}
 
+							passed = EndWatch(sw);
+							stbNativeWrite += passed;
+
+							Log("Span: {0} ms", passed);
+							Log("Stb.Native Size: {0}", save2.Length);
+
+							if (save.Length != save2.Length)
+							{
+								throw new Exception(string.Format("Inconsistent output size: StbSharp={0}, Stb.Native={1}",
+									save.Length, save2.Length));
+							}
+
+							for (var i = 0; i < save.Length; ++i)
+							{
+								if (save[i] != save2[i])
+								{
+									throw new Exception(string.Format("Inconsistent data: index={0}, StbSharp={1}, Stb.Native={2}",
+										i,
+										(int) save[i],
+										(int) save2[i]));
+								}
+							}
+						}
+					}
+				}
+
+				Log("Total StbSharp Write Time: {0} ms", stbSharpWrite);
+				Log("Total Stb.Native Write Time: {0} ms", stbNativeWrite);
 				Log("GC Memory: {0}", GC.GetTotalMemory(true));
-				Log("Native Allocations: {0}", MemoryStats.Allocations);
+				Log("Native Allocations: {0}", StbImageWriteSharp.MemoryStats.Allocations);
 
 				++filesProcessed;
 				Log(DateTime.Now.ToLongTimeString() + " -- " + " Files processed: " + filesProcessed);

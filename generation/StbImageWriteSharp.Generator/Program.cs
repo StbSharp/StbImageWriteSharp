@@ -14,9 +14,10 @@ namespace StbSharp.StbImage.Generator
 				ConversionMode = ConversionMode.SingleString,
 				Defines = new[]
 				{
-						"STBI_WRITE_NO_STDIO",
-						"STB_IMAGE_WRITE_IMPLEMENTATION"
-					},
+					"STBI_WRITE_NO_STDIO",
+					"STB_IMAGE_WRITE_IMPLEMENTATION",
+					"STB_IMAGE_WRITE_STATIC"
+				},
 				Namespace = "StbImageWriteSharp",
 				Class = "StbImageWrite",
 				SkipStructs = new[]
@@ -25,53 +26,53 @@ namespace StbSharp.StbImage.Generator
 				},
 				SkipGlobalVariables = new[]
 				{
-						"stbi_write_tga_with_rle"
+					"stbi_write_tga_with_rle"
 				},
 				SkipFunctions = new[]
 				{
-						"stbi__start_write_callbacks",
-						"stbiw__writefv",
-						"stbiw__writef",
-						"stbiw__outfile",
-						"stbi_write_bmp_to_func",
-						"stbi_write_tga_to_func",
-						"stbi_write_hdr_to_func",
-						"stbi_write_png_to_func",
-						"stbi_write_hdr_core",
-					},
+					"stbi__start_write_callbacks",
+					"stbiw__writefv",
+					"stbiw__writef",
+					"stbiw__outfile",
+					"stbi_write_bmp_to_func",
+					"stbi_write_tga_to_func",
+					"stbi_write_hdr_to_func",
+					"stbi_write_png_to_func",
+					"stbi_write_jpg_to_func",
+					"stbi_write_hdr_core",
+				},
 				Classes = new[]
 				{
-						"stbi__write_context"
-
-					},
+					"stbi__write_context"
+				},
 				GlobalArrays = new[]
 				{
-						"lengthc",
-						"lengtheb",
-						"distc",
-						"disteb",
-						"crc_table",
-						"stbiw__jpg_ZigZag",
-						"std_dc_luminance_nrcodes",
-						"std_dc_luminance_values",
-						"std_ac_luminance_nrcodes",
-						"std_ac_luminance_values",
-						"std_dc_chrominance_nrcodes",
-						"std_dc_chrominance_values",
-						"std_ac_chrominance_nrcodes",
-						"std_ac_chrominance_values",
-						"std_dc_chrominance_nrcodes",
-						"std_dc_chrominance_values",
-						"YDC_HT",
-						"UVDC_HT",
-						"YAC_HT",
-						"UVAC_HT",
-						"YQT",
-						"UVQT",
-						"aasf",
-						"head0",
-						"head2"
-				}
+					"lengthc",
+					"lengtheb",
+					"distc",
+					"disteb",
+					"crc_table",
+					"stbiw__jpg_ZigZag",
+					"std_dc_luminance_nrcodes",
+					"std_dc_luminance_values",
+					"std_ac_luminance_nrcodes",
+					"std_ac_luminance_values",
+					"std_dc_chrominance_nrcodes",
+					"std_dc_chrominance_values",
+					"std_ac_chrominance_nrcodes",
+					"std_ac_chrominance_values",
+					"std_dc_chrominance_nrcodes",
+					"std_dc_chrominance_values",
+					"YDC_HT",
+					"UVDC_HT",
+					"YAC_HT",
+					"UVAC_HT",
+					"YQT",
+					"UVQT",
+					"aasf",
+					"head0",
+					"head2"
+			}
 			};
 
 			var cp = new ClangParser();
@@ -83,6 +84,14 @@ namespace StbSharp.StbImage.Generator
 			Logger.Info("Post processing...");
 
 			data = Utility.ReplaceNativeCalls(data);
+
+			data = data.Replace("((void *)(0))", "null");
+			data = data.Replace("(void *)(0)", "null");
+
+			data = data.Replace("][", ", ");
+
+			data = data.Replace("'J', 'F', 'I', 'F'",
+				"(byte)'J', (byte)'F', (byte)'I', (byte)'F'");
 
 			data = data.Replace("int has_alpha = (int)(((comp) == (2)) || ((comp) == (4)));",
 				"int has_alpha = (((comp) == (2)) || ((comp) == (4)))?1:0;");
@@ -96,7 +105,7 @@ namespace StbSharp.StbImage.Generator
 				"sizeof(byte)");
 			data = data.Replace("(int)(sizeof((*(hash_table[h]))))",
 				"sizeof(byte*)");
-			data = data.Replace("sizeof((hash_table[h][0]))",
+			data = data.Replace("sizeof((hash_table[h, 0]))",
 				"sizeof(byte*)");
 			data = data.Replace("(byte***)(malloc((ulong)(16384 * sizeof(char**)))))",
 				"(byte***)(malloc((ulong)(16384 * sizeof(byte**))))");
@@ -104,6 +113,53 @@ namespace StbSharp.StbImage.Generator
 				"(hlist != null)?");
 			data = data.Replace("(hash_table[i])?",
 				"(hash_table[i] != null)?");
+
+			data = data.Replace("ushort* bs", "ushort bs0, ushort bs1");
+			data = data.Replace("bs[0]", "bs0");
+			data = data.Replace("bs[1]", "bs1");
+
+			data = data.Replace("ushort** HTDC, ushort** HTAC", "ushort[,] HTDC, ushort[,] HTAC");
+			data = data.Replace("HTDC[0]", "HTDC[0, 0], HTDC[0, 1]");
+			data = data.Replace("HTDC[bits[1]]", "HTDC[bits[1], 0], HTDC[bits[1], 1]");
+			data = data.Replace("HTDC[bits[1]]", "HTDC[bits[1], 0], HTDC[bits[1], 1]");
+			data = data.Replace("stbiw__jpg_writeBits(s, bitBuf, bitCnt, bits);",
+				"stbiw__jpg_writeBits(s, bitBuf, bitCnt, bits[0], bits[1]);");
+			data = data.Replace("stbiw__jpg_writeBits(s, bitBuf, bitCnt, EOB);",
+				"stbiw__jpg_writeBits(s, bitBuf, bitCnt, EOB[0], EOB[1]);");
+			data = data.Replace("stbiw__jpg_writeBits(s, bitBuf, bitCnt, M16zeroes);",
+				"stbiw__jpg_writeBits(s, bitBuf, bitCnt, M16zeroes[0], M16zeroes[1]);");
+			data = data.Replace("stbiw__jpg_writeBits(s, &bitBuf, &bitCnt, fillBits);",
+				"stbiw__jpg_writeBits(s, &bitBuf, &bitCnt, fillBits[0], fillBits[1]);");
+			data = data.Replace("stbiw__jpg_writeBits(s, bitBuf, bitCnt, HTAC[(nrzeroes << 4) + bits[1]]);",
+				"stbiw__jpg_writeBits(s, bitBuf, bitCnt, HTAC[(nrzeroes << 4) + bits[1], 0], HTAC[(nrzeroes << 4) + bits[1], 1]);");
+
+			data = data.Replace("s.func(s.context, (void *)(head0), (int)(sizeof((head0))));",
+				"fixed (byte* h = head0) { s.func(s.context, h, head0.Length); }");
+			data = data.Replace("(int)(sizeof((YTable)))", "64");
+			data = data.Replace("(int)(sizeof((UVTable)))", "64");
+			data = data.Replace("(int)(sizeof((head1)))", "24");
+			data = data.Replace("s.func(s.context, (void *)(std_dc_luminance_nrcodes + 1), (int)(sizeof((std_dc_luminance_nrcodes)) - 1));",
+				"fixed (byte* d = &std_dc_luminance_nrcodes[1]) { s.func(s.context, d, std_dc_chrominance_nrcodes.Length - 1); }");
+			data = data.Replace("s.func(s.context, (void *)(std_dc_luminance_values), (int)(sizeof((std_dc_luminance_values))));",
+				"fixed (byte* d = std_dc_luminance_values) { s.func(s.context, d, std_dc_chrominance_values.Length); }");
+
+			data = data.Replace("s.func(s.context, (void *)(std_ac_luminance_nrcodes + 1), (int)(sizeof((std_ac_luminance_nrcodes)) - 1));",
+				"fixed (byte* a = &std_ac_luminance_nrcodes[1]) { s.func(s.context, a, std_ac_luminance_nrcodes.Length - 1); }");
+			data = data.Replace("s.func(s.context, (void *)(std_ac_luminance_values), (int)(sizeof((std_ac_luminance_values))));",
+				"fixed (byte* d = std_ac_luminance_values) { s.func(s.context, d, std_ac_chrominance_values.Length); }");
+
+			data = data.Replace("s.func(s.context, (void *)(std_dc_chrominance_nrcodes + 1), (int)(sizeof((std_dc_chrominance_nrcodes)) - 1));",
+				"fixed (byte* d = &std_dc_chrominance_nrcodes[1]) { s.func(s.context, d, std_dc_chrominance_nrcodes.Length - 1); }");
+			data = data.Replace("s.func(s.context, (void *)(std_dc_chrominance_values), (int)(sizeof((std_dc_chrominance_values))));",
+				"fixed (byte* d = std_dc_chrominance_values) { s.func(s.context, d, std_dc_chrominance_values.Length); }");
+
+			data = data.Replace("s.func(s.context, (void *)(std_ac_chrominance_nrcodes + 1), (int)(sizeof((std_ac_chrominance_nrcodes)) - 1));",
+				"fixed (byte* a = &std_ac_chrominance_nrcodes[1]) { s.func(s.context, a, std_ac_chrominance_nrcodes.Length - 1); }");
+			data = data.Replace("s.func(s.context, (void *)(std_ac_chrominance_values), (int)(sizeof((std_ac_chrominance_values))));",
+				"fixed (byte* d = std_ac_chrominance_values) { s.func(s.context, d, std_ac_chrominance_values.Length); }");
+
+			data = data.Replace("s.func(s.context, (void *)(head2), (int)(sizeof((head2))));",
+				"fixed (byte* h = head2) { s.func(s.context, h, head2.Length); }");
 
 			File.WriteAllText(@"..\..\..\..\..\src\StbImageWriteSharp\StbImageWrite.Generated.cs", data);
 		}

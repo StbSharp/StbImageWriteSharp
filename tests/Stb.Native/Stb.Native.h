@@ -12,33 +12,17 @@ using namespace System::Threading;
 #include <vector>
 #include <functional>
 
-#define STBI_NO_STDIO
-#define STB_IMAGE_IMPLEMENTATION
-#include "../../generation/StbImageSharp.Generator/stb_image.h"
+#define STBI_WRITE_NO_STDIO
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_STATIC
+#include "../../generation/StbImageWriteSharp.Generator/stb_image_write.h"
 
 namespace StbNative {
-	int read_callback(void *user, char *data, int size);
-	void skip_callback(void *user, int size);
-	int eof_callback(void *user);
 	void write_func(void *context, void *data, int size);
-
-	public ref class ReadInfo
-	{
-	public:
-		Stream ^stream;
-		array<unsigned char> ^buffer;
-
-		ReadInfo(Stream ^s, array<unsigned char> ^b)
-		{
-			stream = s;
-			buffer = b;
-		}
-	};
 
 	public ref class Native
 	{
 	public:
-		static Dictionary<int, ReadInfo ^> ^readInfo = gcnew Dictionary<int, ReadInfo ^>();
 		static Dictionary<int, Stream ^> ^writeInfo = gcnew Dictionary<int, Stream ^>();
 		static int _id = 0;
 
@@ -49,133 +33,86 @@ namespace StbNative {
 		}
 
 		// TODO: Add your methods for this class here.
-		static array<unsigned char> ^ load_from_memory(array<unsigned char> ^bytes, [Out] int %x, [Out] int %y, [Out] int %comp, int req_comp)
+		static void save_to_stream(array<unsigned char> ^bytes, int x, int y, int comp, int type, Stream ^output)
 		{
-			pin_ptr<unsigned char> p = &bytes[0];
-
-			int xx, yy, ccomp;
-			const unsigned char *ptr = (const unsigned char *)p;
-			void *res = stbi_load_from_memory(ptr, bytes->Length, &xx, &yy, &ccomp, req_comp);
-
-			x = xx;
-			y = yy;
-			comp = ccomp;
-
-			int c = req_comp != 0 ? req_comp : comp;
-			array<unsigned char> ^result = gcnew array<unsigned char>(x * y * c);
-
-			Marshal::Copy(IntPtr((void *)res), result, 0, result->Length);
-			free(res);
-
-			return result;
-		}
-
-		static array<unsigned char> ^ load_from_stream(Stream ^input, [Out] int %x, [Out] int %y, [Out] int %comp, int req_comp)
-		{
-			array<unsigned char> ^buffer = gcnew array<unsigned char>(32768);
-
-			Monitor::Enter(readInfo);
+			Monitor::Enter(writeInfo);
 			int id;
 			try {
 				id = GenerateId();
 
-				ReadInfo ^newInfo = gcnew ReadInfo(input, buffer);
-				readInfo->Add(id, newInfo);
+				writeInfo->Add(id, output);
 			}
 			finally
 			{
-				Monitor::Exit(readInfo);
+				Monitor::Exit(writeInfo);
 			}
 
-			stbi_io_callbacks callbacks;
-			callbacks.read = read_callback;
-			callbacks.skip = skip_callback;
-			callbacks.eof = eof_callback;
+			pin_ptr<unsigned char> p = &bytes[0];
+			unsigned char *ptr = (unsigned char *)p;
 
-			int xx, yy, ccomp;
+			std::vector<float> ff;
+			switch (type)
+			{
+				case 0:
+					stbi_write_bmp_to_func(write_func, (void *)id, x, y, comp, ptr);
+					break;
+				case 1:
+					stbi_write_tga_to_func(write_func, (void *)id, x, y, comp, ptr);
+					break;
+				case 2:
+				{
+					ff.resize(bytes->Length);
+					for (int i = 0; i < bytes->Length; ++i)
+					{
+						ff[i] = (float)(bytes[i] / 255.0f);
+					}
 
-			void *res = stbi_load_from_callbacks(&callbacks, (void *)id, &xx, &yy, &ccomp, req_comp);
+					stbi_write_hdr_to_func(write_func, (void *)id, x, y, comp, &ff[0]);
+					break;
+				}
+				case 3:
+					stbi_write_png_to_func(write_func, (void *)id, x, y, comp, ptr, x * comp);
+					break;
+			}
 
-			x = xx;
-			y = yy;
-			comp = ccomp;
-
-			int c = req_comp != 0 ? req_comp : comp;
-			array<unsigned char> ^result = gcnew array<unsigned char>(x * y * c);
-
-			Marshal::Copy(IntPtr((void *)res), result, 0, result->Length);
-			free(res);
-
-			buffer = nullptr;
-
-			Monitor::Enter(readInfo);
+			Monitor::Enter(writeInfo);
 			try {
-				readInfo->Remove(id);
+				writeInfo->Remove(id);
 			}
 			finally
 			{
-				Monitor::Exit(readInfo);
+				Monitor::Exit(writeInfo);
+			}
+		}
+
+		static void save_to_jpg(array<unsigned char> ^bytes, int x, int y, int comp, Stream ^output, int quality)
+		{
+			Monitor::Enter(writeInfo);
+			int id;
+			try {
+				id = GenerateId();
+				writeInfo->Add(id, output);
+			}
+			finally
+			{
+				Monitor::Exit(writeInfo);
 			}
 
-			return result;
+			pin_ptr<unsigned char> p = &bytes[0];
+			unsigned char *ptr = (unsigned char *)p;
+
+			stbi_write_jpg_to_func(write_func, (void *)id, x, y, comp, ptr, quality);
+
+			Monitor::Enter(writeInfo);
+			try {
+				writeInfo->Remove(id);
+			}
+			finally
+			{
+				Monitor::Exit(writeInfo);
+			}
 		}
 	};
-
-	int read_callback(void *user, char *data, int size)
-	{
-		ReadInfo ^info;
-		Monitor::Enter(Native::readInfo);
-		int id = (int)user;
-		try {
-			info = Native::readInfo[id];
-		}
-		finally
-		{
-			Monitor::Exit(Native::readInfo);
-		}
-
-		if (size > info->buffer->Length) {
-			info->buffer = gcnew array<unsigned char>(size * 2);
-		}
-
-		int res = info->stream->Read(info->buffer, 0, size);
-
-		Marshal::Copy(info->buffer, 0, IntPtr(data), res);
-
-		return res;
-	}
-
-	void skip_callback(void *user, int size)
-	{
-		ReadInfo ^info;
-		Monitor::Enter(Native::readInfo);
-		int id = (int)user;
-		try {
-			info = Native::readInfo[id];
-		}
-		finally
-		{
-			Monitor::Exit(Native::readInfo);
-		}
-
-		info->stream->Seek(size, SeekOrigin::Current);
-	}
-
-	int eof_callback(void *user)
-	{
-		ReadInfo ^info;
-		Monitor::Enter(Native::readInfo);
-		int id = (int)user;
-		try {
-			info = Native::readInfo[id];
-		}
-		finally
-		{
-			Monitor::Exit(Native::readInfo);
-		}
-
-		return info->stream->CanRead ? 1 : 0;
-	}
 
 	void write_func(void *context, void *data, int size)
 	{
