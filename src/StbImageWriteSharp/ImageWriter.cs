@@ -39,17 +39,17 @@ namespace StbImageWriteSharp
 		{
 			if (data == null)
 			{
-				throw new ArgumentNullException(nameof(data));
+				throw new ArgumentNullException("data");
 			}
 
 			if (width <= 0)
 			{
-				throw new ArgumentOutOfRangeException(nameof(width));
+				throw new ArgumentOutOfRangeException("width");
 			}
 
 			if (height <= 0)
 			{
-				throw new ArgumentOutOfRangeException(nameof(height));
+				throw new ArgumentOutOfRangeException("height");
 			}
 
 			int requiredDataSize = width * height * (int)components;
