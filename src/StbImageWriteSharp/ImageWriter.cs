@@ -4,7 +4,12 @@ using System.Runtime.InteropServices;
 
 namespace StbImageWriteSharp
 {
-	public unsafe class ImageWriter
+#if !STBSHARP_INTERNAL
+	public
+#else
+	internal
+#endif
+	unsafe class ImageWriter
 	{
 		private Stream _stream;
 		private byte[] _buffer = new byte[1024];

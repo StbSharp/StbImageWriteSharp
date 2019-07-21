@@ -1,6 +1,11 @@
 ﻿namespace StbImageWriteSharp
 {
-	public enum ColorComponents
+#if !STBSHARP_INTERNAL
+	public
+#else
+	internal
+#endif
+	enum ColorComponents
 	{
 		Grey,
 		GreyAlpha,
