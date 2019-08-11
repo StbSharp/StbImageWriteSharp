@@ -7,7 +7,7 @@ namespace StbImageWriteSharp
 #if !STBSHARP_INTERNAL
 	public
 #else
-	internal
+    internal
 #endif
 	unsafe class ImageWriter
 	{
@@ -23,10 +23,10 @@ namespace StbImageWriteSharp
 
 			if (_buffer.Length < size)
 			{
-				_buffer = new byte[size*2];
+				_buffer = new byte[size * 2];
 			}
 
-			var bptr = (byte*) data;
+			var bptr = (byte*)data;
 
 			Marshal.Copy(new IntPtr(bptr), _buffer, 0, size);
 
@@ -60,17 +60,35 @@ namespace StbImageWriteSharp
 			}
 		}
 
+		public void WriteBmp(void* data, int width, int height, ColorComponents components, Stream dest)
+		{
+			try
+			{
+				_stream = dest;
+				StbImageWrite.stbi_write_bmp_to_func(WriteCallback, null, width, height, (int)components, data);
+			}
+			finally
+			{
+				_stream = null;
+			}
+		}
+
 		public void WriteBmp(byte[] data, int width, int height, ColorComponents components, Stream dest)
 		{
 			CheckParams(data, width, height, components);
 
+			fixed (byte* b = &data[0])
+			{
+				WriteBmp(b, width, height, components, dest);
+			}
+		}
+
+		public void WriteTga(void* data, int width, int height, ColorComponents components, Stream dest)
+		{
 			try
 			{
 				_stream = dest;
-				fixed (byte* b = &data[0])
-				{
-					StbImageWrite.stbi_write_bmp_to_func(WriteCallback, null, width, height, (int)components, b);
-				}
+				StbImageWrite.stbi_write_tga_to_func(WriteCallback, null, width, height, (int)components, data);
 			}
 			finally
 			{
@@ -82,17 +100,9 @@ namespace StbImageWriteSharp
 		{
 			CheckParams(data, width, height, components);
 
-			try
+			fixed (byte* b = &data[0])
 			{
-				_stream = dest;
-				fixed (byte* b = &data[0])
-				{
-					StbImageWrite.stbi_write_tga_to_func(WriteCallback, null, width, height, (int)components, b);
-				}
-			}
-			finally
-			{
-				_stream = null;
+				WriteTga(b, width, height, components, dest);
 			}
 		}
 
@@ -106,7 +116,7 @@ namespace StbImageWriteSharp
 				var f = new float[data.Length];
 				for (var i = 0; i < data.Length; ++i)
 				{
-					f[i] = data[i]/255.0f;
+					f[i] = data[i] / 255.0f;
 				}
 
 				fixed (float* fptr = f)
@@ -120,19 +130,44 @@ namespace StbImageWriteSharp
 			}
 		}
 
-		public void WritePng(byte[] data, int width, int height, ColorComponents components, Stream dest)
+		public void WritePng(void* data, int width, int height, ColorComponents components, Stream dest)
 		{
-			CheckParams(data, width, height, components);
-
 			try
 			{
 				_stream = dest;
 
-				fixed (byte* b = &data[0])
-				{
-					StbImageWrite.stbi_write_png_to_func(WriteCallback, null, width, height, (int)components, b,
-						width*(int)components);
-				}
+				StbImageWrite.stbi_write_png_to_func(WriteCallback, null, width, height, (int)components, data,
+				   width * (int)components);
+			}
+			finally
+			{
+				_stream = null;
+			}
+		}
+
+		public void WritePng(byte[] data, int width, int height, ColorComponents components, Stream dest)
+		{
+			CheckParams(data, width, height, components);
+
+			fixed (byte* b = &data[0])
+			{
+				WritePng(data, width, height, components, dest);
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="dest"></param>
+		/// <param name="quality">Should be from 1 to 100</param>
+		public void WriteJpg(void* data, int width, int height, ColorComponents components, Stream dest, int quality)
+		{
+			try
+			{
+				_stream = dest;
+
+				StbImageWrite.stbi_write_jpg_to_func(WriteCallback, null, width, height, (int)components, data, quality);
 			}
 			finally
 			{
@@ -143,25 +178,16 @@ namespace StbImageWriteSharp
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="image"></param>
+		/// <param name="data"></param>
 		/// <param name="dest"></param>
-		/// <param name="quality">Should be beetween 1 & 100</param>
+		/// <param name="quality">Should be from 1 to 100</param>
 		public void WriteJpg(byte[] data, int width, int height, ColorComponents components, Stream dest, int quality)
 		{
 			CheckParams(data, width, height, components);
 
-			try
+			fixed (byte* b = &data[0])
 			{
-				_stream = dest;
-
-				fixed (byte* b = &data[0])
-				{
-					StbImageWrite.stbi_write_jpg_to_func(WriteCallback, null, width, height, (int)components, b, quality);
-				}
-			}
-			finally
-			{
-				_stream = null;
+				WriteJpg(b, width, height, components, dest, quality);
 			}
 		}
 	}
