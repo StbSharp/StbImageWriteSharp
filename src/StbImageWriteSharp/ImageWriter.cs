@@ -159,6 +159,9 @@ namespace StbImageWriteSharp
 		/// 
 		/// </summary>
 		/// <param name="data"></param>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		/// <param name="components"></param>
 		/// <param name="dest"></param>
 		/// <param name="quality">Should be from 1 to 100</param>
 		public void WriteJpg(void* data, int width, int height, ColorComponents components, Stream dest, int quality)
@@ -179,6 +182,9 @@ namespace StbImageWriteSharp
 		/// 
 		/// </summary>
 		/// <param name="data"></param>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
+		/// <param name="components"></param>
 		/// <param name="dest"></param>
 		/// <param name="quality">Should be from 1 to 100</param>
 		public void WriteJpg(byte[] data, int width, int height, ColorComponents components, Stream dest, int quality)
