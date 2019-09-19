@@ -38,6 +38,9 @@ using (Stream stream = File.OpenWrite(path))
 # License
 Public Domain
 
+# Who uses it?
+[MonoGame](http://www.monogame.net/) uses StbImageWriteSharp for Texture2D.SaveAs
+
 # Credits
 * [stb](https://github.com/nothings/stb)
 
