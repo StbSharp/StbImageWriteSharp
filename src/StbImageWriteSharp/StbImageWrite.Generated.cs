@@ -620,30 +620,10 @@ namespace StbImageWriteSharp
 					_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
 				}
 			}
-			if (256 <= 143)
-			{
-				bitbuf |= (uint)((stbiw__zlib_bitrev((int)(0x30 + (256)), (int)(8))) << bitcount);
-				bitcount += (int)(8);
-				_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
-			}
-			else if (256 <= 255)
-			{
-				bitbuf |= (uint)((stbiw__zlib_bitrev((int)(0x190 + (256) - 144), (int)(9))) << bitcount);
-				bitcount += (int)(9);
-				_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
-			}
-			else if (256 <= 279)
-			{
-				bitbuf |= (uint)((stbiw__zlib_bitrev((int)(0 + (256) - 256), (int)(7))) << bitcount);
-				bitcount += (int)(7);
-				_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
-			}
-			else
-			{
-				bitbuf |= (uint)((stbiw__zlib_bitrev((int)(0xc0 + (256) - 280), (int)(8))) << bitcount);
-				bitcount += (int)(8);
-				_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
-			}
+
+			bitbuf |= (uint)((stbiw__zlib_bitrev(0, (int)(7))) << bitcount);
+			bitcount += (int)(7);
+			_out_ = stbiw__zlib_flushf(_out_, &bitbuf, &bitcount);
 
 			while ((bitcount) != 0)
 			{
