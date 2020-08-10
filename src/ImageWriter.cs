@@ -151,7 +151,7 @@ namespace StbImageWriteSharp
 
 			fixed (byte* b = &data[0])
 			{
-				WritePng(data, width, height, components, dest);
+				WritePng(b, width, height, components, dest);
 			}
 		}
 
