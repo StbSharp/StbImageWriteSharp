@@ -14,11 +14,11 @@ namespace StbImageWriteSharp
 		private Stream _stream;
 		private byte[] _buffer = new byte[1024];
 
-		private int WriteCallback(void* context, void* data, int size)
+		private void WriteCallback(void* context, void* data, int size)
 		{
 			if (data == null || size <= 0)
 			{
-				return 0;
+				return;
 			}
 
 			if (_buffer.Length < size)
@@ -31,8 +31,6 @@ namespace StbImageWriteSharp
 			Marshal.Copy(new IntPtr(bptr), _buffer, 0, size);
 
 			_stream.Write(_buffer, 0, size);
-
-			return size;
 		}
 
 		private void CheckParams(byte[] data, int width, int height, ColorComponents components)
