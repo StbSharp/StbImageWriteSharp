@@ -142,15 +142,16 @@ namespace StbSharp.Tests
 
 						if (save.Length != save2.Length)
 						{
-							throw new Exception(string.Format("Inconsistent output size: StbSharp={0}, Stb.Native={1}",
-								save.Length, save2.Length));
+							throw new Exception(string.Format("Inconsistent output size('{0}'): StbSharp={1}, Stb.Native={2}",
+								f, save.Length, save2.Length));
 						}
 
 						for (var i = 0; i < save.Length; ++i)
 						{
 							if (save[i] != save2[i])
 							{
-								throw new Exception(string.Format("Inconsistent data: index={0}, StbSharp={1}, Stb.Native={2}",
+								throw new Exception(string.Format("Inconsistent data('{0}'): index={1}, StbSharp={2}, Stb.Native={3}",
+									f,
 									i,
 									(int) save[i],
 									(int) save2[i]));
@@ -195,15 +196,16 @@ namespace StbSharp.Tests
 
 							if (save.Length != save2.Length)
 							{
-								throw new Exception(string.Format("Inconsistent output size: StbSharp={0}, Stb.Native={1}",
-									save.Length, save2.Length));
+								throw new Exception(string.Format("Inconsistent output size('{0}'): StbSharp={1}, Stb.Native={2}",
+									f, save.Length, save2.Length));
 							}
 
 							for (var i = 0; i < save.Length; ++i)
 							{
 								if (save[i] != save2[i])
 								{
-									throw new Exception(string.Format("Inconsistent data: index={0}, StbSharp={1}, Stb.Native={2}",
+									throw new Exception(string.Format("Inconsistent data('{0}'): index={1}, StbSharp={2}, Stb.Native={3}",
+										f,
 										i,
 										(int) save[i],
 										(int) save2[i]));

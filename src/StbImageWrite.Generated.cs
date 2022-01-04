@@ -397,6 +397,8 @@ namespace StbImageWriteSharp
 					var Y = stackalloc float[256];
 					var U = stackalloc float[256];
 					var V = stackalloc float[256];
+					var subU = stackalloc float[64];
+					var subV = stackalloc float[64];
 
 					for (y = 0; y < height; y += 16)
 						for (x = 0; x < width; x += 16)
@@ -428,8 +430,6 @@ namespace StbImageWriteSharp
 							DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y + 136, 16, fdtbl_Y, DCY,
 								stbi_write_jpg_core_YDC_HT, stbi_write_jpg_core_YAC_HT);
 							{
-								var subU = stackalloc float[64];
-								var subV = stackalloc float[64];
 								var yy = 0;
 								var xx = 0;
 								for (yy = 0, pos = 0; yy < 8; ++yy)
@@ -449,12 +449,13 @@ namespace StbImageWriteSharp
 				}
 				else
 				{
+					var Y = stackalloc float[64];
+					var U = stackalloc float[64];
+					var V = stackalloc float[64];
+
 					for (y = 0; y < height; y += 8)
 						for (x = 0; x < width; x += 8)
 						{
-							var Y = stackalloc float[64];
-							var U = stackalloc float[64];
-							var V = stackalloc float[64];
 							for (row = y, pos = 0; row < y + 8; ++row)
 							{
 								var clamped_row = row < height ? row : height - 1;
