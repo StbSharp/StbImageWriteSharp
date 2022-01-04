@@ -12,7 +12,6 @@ using namespace System::Threading;
 #include <vector>
 #include <functional>
 
-#define STBI_WRITE_NO_STDIO
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_STATIC
 #include "../../generation/StbImageWriteSharp.Generator/stb_image_write.h"
