@@ -15,7 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\StbImageSharp\src\StbImageSharp.csproj" />
+    <PackageReference Include="StbImageSharp" Version="2.27.7" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Stb.Native\Stb.Native.vcxproj" />
   </ItemGroup>
 
