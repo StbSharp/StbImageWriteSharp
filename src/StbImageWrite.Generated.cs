@@ -1350,7 +1350,10 @@ namespace StbImageWriteSharp
 		{
 			if (s.buf_used != 0)
 			{
-				s.func(s.context, s.buffer, s.buf_used);
+				fixed (byte* bptr = s.buffer)
+				{
+					s.func(s.context, bptr, s.buf_used);
+				}
 				s.buf_used = 0;
 			}
 		}
@@ -1592,7 +1595,10 @@ namespace StbImageWriteSharp
 				if (data == null || ((int*)data - 2)[1] + 1 >= ((int*)data - 2)[0])
 					stbiw__sbgrowf((void**)&data, 1, sizeof(byte));
 
-				data[((int*)data - 2)[1]++] = (byte)(*bitbuffer & 0xff);
+				var index = ((int*)data - 2)[1]++;
+				var value = (byte)(*bitbuffer & 0xff);
+				data[index] = value;
+
 				*bitbuffer >>= 8;
 				*bitcount -= 8;
 			}
@@ -1603,15 +1609,9 @@ namespace StbImageWriteSharp
 		public class stbi__write_context
 		{
 			public int buf_used;
-			public byte* buffer;
-			public UnsafeArray1D<byte> bufferArray = new UnsafeArray1D<byte>(64);
+			public byte[] buffer = new byte[64];
 			public void* context;
 			public delegate0 func;
-
-			public stbi__write_context()
-			{
-				buffer = (byte*)bufferArray;
-			}
 		}
 	}
 }
