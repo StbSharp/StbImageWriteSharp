@@ -10,6 +10,8 @@ namespace StbImageWriteSharp
 #endif
 	static unsafe partial class StbImageWrite
 	{
+		public static int NativeAllocations => MemoryStats.Allocations;
+
 		public static void stbiw__writefv(stbi__write_context s, string fmt, params object[] v)
 		{
 			var vindex = 0;
