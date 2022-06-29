@@ -57,7 +57,7 @@ namespace Converter
 			return outputType;
 		}
 
-		private static void WriteOutputImage(string outputFile, OutputType outputType, int width, int height, byte[] bitmap)
+		private static void WriteOutputImage(string outputFile, OutputType outputType, int width, int height, byte[] bitmap, int jpegQuality)
 		{
 			Console.WriteLine("Writing {0}", outputFile);
 			using (var stream = new MemoryStream())
@@ -66,7 +66,7 @@ namespace Converter
 				switch (outputType)
 				{
 					case OutputType.Jpg:
-						imageWriter.WriteJpg(bitmap, width, height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream, 100);
+						imageWriter.WriteJpg(bitmap, width, height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream, jpegQuality);
 						break;
 					case OutputType.Png:
 						imageWriter.WritePng(bitmap, width, height, StbImageWriteSharp.ColorComponents.RedGreenBlueAlpha, stream);
@@ -92,7 +92,7 @@ namespace Converter
 		{
 			if (args.Length < 2)
 			{
-				Console.WriteLine("Usage: MyraTexturePacker.exe <input_file> <output_file>");
+				Console.WriteLine("Usage: Converter.exe <input_file> <output_file> [jpegQuality]");
 				return;
 			}
 
@@ -105,7 +105,14 @@ namespace Converter
 				}
 
 				var outputType = DetermineOutputType(args[1]);
-				WriteOutputImage(args[1], outputType, image.Width, image.Height, image.Data);
+
+				var jpegQuality = 90;
+				if (args.Length > 2)
+				{
+					jpegQuality = int.Parse(args[2]);
+				}
+
+				WriteOutputImage(args[1], outputType, image.Width, image.Height, image.Data, jpegQuality);
 			}
 			catch (Exception ex)
 			{
