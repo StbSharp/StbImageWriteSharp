@@ -12,7 +12,7 @@ namespace StbSharp.StbImage.Generator
 	{
 		private static string Write<T>(Dictionary<string, T> input) where T : SyntaxNode
 		{
-			var keys = (from string k in input.Keys orderby k select k).ToArray();
+			var keys = (from string k in input.Keys select k).ToArray();
 			var result = string.Empty;
 			foreach (var key in keys)
 			{
