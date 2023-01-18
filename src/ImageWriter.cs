@@ -104,6 +104,19 @@ namespace StbImageWriteSharp
 			}
 		}
 
+		public void WriteHdr(void* data, int width, int height, ColorComponents components, Stream dest)
+		{
+		    try
+		    {
+			_stream = dest;
+			StbImageWrite.stbi_write_hdr_to_func(WriteCallback, null, width, height, (int)components, (float*)data);
+		    }
+		    finally
+		    {
+			_stream = null;
+		    }
+		}
+		
 		public void WriteHdr(byte[] data, int width, int height, ColorComponents components, Stream dest)
 		{
 			CheckParams(data, width, height, components);
