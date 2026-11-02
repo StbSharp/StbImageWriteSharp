@@ -1,3 +1,5 @@
+**Important:** [StbImageNext](https://github.com/StbSharp/StbImageNext) is the safe and recommended alternative of this project.
+
 # StbImageWriteSharp
 [![NuGet](https://img.shields.io/nuget/v/StbImageWriteSharp.svg)](https://www.nuget.org/packages/StbImageWriteSharp/) 
 [![Build status](https://ci.appveyor.com/api/projects/status/2fp00srd5th2g3gv?svg=true)](https://ci.appveyor.com/project/RomanShapiro/stbimagewritesharp)
